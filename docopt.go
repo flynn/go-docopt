@@ -43,7 +43,7 @@ and to handle your own return codes, pass an optional last parameter of `false`
 for `exit`.
 */
 func Parse(doc string, argv []string, help bool, version string,
-	optionsFirst bool, exit ...bool) (map[string]interface{}, error) {
+	optionsFirst bool, exit ...bool) (*Args, error) {
 	// if "false" was the (optional) last arg, don't call os.Exit()
 	exitOk := true
 	if len(exit) > 0 {
@@ -66,8 +66,14 @@ func Parse(doc string, argv []string, help bool, version string,
 	return args, err
 }
 
+type Args struct {
+	All    map[string]interface{}
+	String map[string]string
+	Bool   map[string]bool
+}
+
 // parse and return a map of args, output and all errors
-func parse(doc string, argv []string, help bool, version string, optionsFirst bool) (args map[string]interface{}, output string, err error) {
+func parse(doc string, argv []string, help bool, version string, optionsFirst bool) (args *Args, output string, err error) {
 	if argv == nil && len(os.Args) > 1 {
 		argv = os.Args[1:]
 	}
@@ -135,7 +141,7 @@ func parse(doc string, argv []string, help bool, version string, optionsFirst bo
 			output = handleError(err, usage)
 			return
 		}
-		args = append(patFlat, *collected...).dictionary()
+		args = append(patFlat, *collected...).args()
 		return
 	}
 
@@ -1207,12 +1213,22 @@ func (pl *patternList) remove(p *pattern) {
 	(*pl) = pl.diff(patternList{p})
 }
 
-func (pl patternList) dictionary() map[string]interface{} {
-	dict := make(map[string]interface{})
-	for _, a := range pl {
-		dict[a.name] = a.value
+func (pl patternList) args() *Args {
+	res := &Args{
+		All:    make(map[string]interface{}),
+		String: make(map[string]string),
+		Bool:   make(map[string]bool),
 	}
-	return dict
+	for _, a := range pl {
+		res.All[a.name] = a.value
+		switch v := a.value.(type) {
+		case string:
+			res.String[a.name] = v
+		case bool:
+			res.Bool[a.name] = v
+		}
+	}
+	return res
 }
 
 func stringPartition(s, sep string) (string, string, string) {

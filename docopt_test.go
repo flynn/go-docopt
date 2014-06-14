@@ -119,22 +119,22 @@ func TestOptionName(t *testing.T) {
 }
 
 func TestCommands(t *testing.T) {
-	if v, err := Parse("Usage: prog add", []string{"add"}, true, "", false, false); reflect.DeepEqual(v, map[string]interface{}{"add": true}) != true {
+	if v, err := Parse("Usage: prog add", []string{"add"}, true, "", false, false); reflect.DeepEqual(v.All, map[string]interface{}{"add": true}) != true {
 		t.Error(err)
 	}
-	if v, err := Parse("Usage: prog [add]", []string{}, true, "", false, false); reflect.DeepEqual(v, map[string]interface{}{"add": false}) != true {
+	if v, err := Parse("Usage: prog [add]", []string{}, true, "", false, false); reflect.DeepEqual(v.All, map[string]interface{}{"add": false}) != true {
 		t.Error(err)
 	}
-	if v, err := Parse("Usage: prog [add]", []string{"add"}, true, "", false, false); reflect.DeepEqual(v, map[string]interface{}{"add": true}) != true {
+	if v, err := Parse("Usage: prog [add]", []string{"add"}, true, "", false, false); reflect.DeepEqual(v.All, map[string]interface{}{"add": true}) != true {
 		t.Error(err)
 	}
-	if v, err := Parse("Usage: prog (add|rm)", []string{"add"}, true, "", false, false); reflect.DeepEqual(v, map[string]interface{}{"add": true, "rm": false}) != true {
+	if v, err := Parse("Usage: prog (add|rm)", []string{"add"}, true, "", false, false); reflect.DeepEqual(v.All, map[string]interface{}{"add": true, "rm": false}) != true {
 		t.Error(err)
 	}
-	if v, err := Parse("Usage: prog (add|rm)", []string{"rm"}, true, "", false, false); reflect.DeepEqual(v, map[string]interface{}{"add": false, "rm": true}) != true {
+	if v, err := Parse("Usage: prog (add|rm)", []string{"rm"}, true, "", false, false); reflect.DeepEqual(v.All, map[string]interface{}{"add": false, "rm": true}) != true {
 		t.Error(err)
 	}
-	if v, err := Parse("Usage: prog a b", []string{"a", "b"}, true, "", false, false); reflect.DeepEqual(v, map[string]interface{}{"a": true, "b": true}) != true {
+	if v, err := Parse("Usage: prog a b", []string{"a", "b"}, true, "", false, false); reflect.DeepEqual(v.All, map[string]interface{}{"a": true, "b": true}) != true {
 		t.Error(err)
 	}
 	_, err := Parse("Usage: prog a b", []string{"b", "a"}, true, "", false, false)
@@ -1124,10 +1124,10 @@ func TestMatchingParen(t *testing.T) {
 }
 
 func TestAllowDoubleDash(t *testing.T) {
-	if v, err := Parse("usage: prog [-o] [--] <arg>\noptions: -o", []string{"--", "-o"}, true, "", false, false); reflect.DeepEqual(v, map[string]interface{}{"-o": false, "<arg>": "-o", "--": true}) != true {
+	if v, err := Parse("usage: prog [-o] [--] <arg>\noptions: -o", []string{"--", "-o"}, true, "", false, false); reflect.DeepEqual(v.All, map[string]interface{}{"-o": false, "<arg>": "-o", "--": true}) != true {
 		t.Error(err)
 	}
-	if v, err := Parse("usage: prog [-o] [--] <arg>\noptions: -o", []string{"-o", "1"}, true, "", false, false); reflect.DeepEqual(v, map[string]interface{}{"-o": true, "<arg>": "1", "--": false}) != true {
+	if v, err := Parse("usage: prog [-o] [--] <arg>\noptions: -o", []string{"-o", "1"}, true, "", false, false); reflect.DeepEqual(v.All, map[string]interface{}{"-o": true, "<arg>": "1", "--": false}) != true {
 		t.Error(err)
 	}
 	_, err := Parse("usage: prog [-o] <arg>\noptions:-o", []string{"-o"}, true, "", false, false)
@@ -1140,10 +1140,10 @@ func TestDocopt(t *testing.T) {
 	doc := `Usage: prog [-v] A
 
                 Options: -v  Be verbose.`
-	if v, err := Parse(doc, []string{"arg"}, true, "", false, false); reflect.DeepEqual(v, map[string]interface{}{"-v": false, "A": "arg"}) != true {
+	if v, err := Parse(doc, []string{"arg"}, true, "", false, false); reflect.DeepEqual(v.All, map[string]interface{}{"-v": false, "A": "arg"}) != true {
 		t.Error(err)
 	}
-	if v, err := Parse(doc, []string{"-v", "arg"}, true, "", false, false); reflect.DeepEqual(v, map[string]interface{}{"-v": true, "A": "arg"}) != true {
+	if v, err := Parse(doc, []string{"-v", "arg"}, true, "", false, false); reflect.DeepEqual(v.All, map[string]interface{}{"-v": true, "A": "arg"}) != true {
 		t.Error(err)
 	}
 
@@ -1158,10 +1158,10 @@ func TestDocopt(t *testing.T) {
       --help
 
     `
-	if v, err := Parse(doc, []string{"-v", "file.py"}, true, "", false, false); reflect.DeepEqual(v, map[string]interface{}{"-v": true, "-q": false, "-r": false, "--help": false, "FILE": "file.py", "INPUT": nil, "OUTPUT": nil}) != true {
+	if v, err := Parse(doc, []string{"-v", "file.py"}, true, "", false, false); reflect.DeepEqual(v.All, map[string]interface{}{"-v": true, "-q": false, "-r": false, "--help": false, "FILE": "file.py", "INPUT": nil, "OUTPUT": nil}) != true {
 		t.Error(err)
 	}
-	if v, err := Parse(doc, []string{"-v"}, true, "", false, false); reflect.DeepEqual(v, map[string]interface{}{"-v": true, "-q": false, "-r": false, "--help": false, "FILE": nil, "INPUT": nil, "OUTPUT": nil}) != true {
+	if v, err := Parse(doc, []string{"-v"}, true, "", false, false); reflect.DeepEqual(v.All, map[string]interface{}{"-v": true, "-q": false, "-r": false, "--help": false, "FILE": nil, "INPUT": nil, "OUTPUT": nil}) != true {
 		t.Error(err)
 	}
 
@@ -1195,7 +1195,7 @@ func TestIssue40(t *testing.T) {
 	if err != nil || len(output) == 0 {
 		t.Error(err)
 	}
-	if v, err := Parse("usage: prog --aabb | --aa", []string{"--aa"}, true, "", false, false); reflect.DeepEqual(v, map[string]interface{}{"--aabb": false, "--aa": true}) != true {
+	if v, err := Parse("usage: prog --aabb | --aa", []string{"--aa"}, true, "", false, false); reflect.DeepEqual(v.All, map[string]interface{}{"--aabb": false, "--aa": true}) != true {
 		t.Error(err)
 	}
 }
@@ -1205,29 +1205,29 @@ func TestIssue34UnicodeStrings(t *testing.T) {
 }
 
 func TestCountMultipleFlags(t *testing.T) {
-	if v, err := Parse("usage: prog [-v]", []string{"-v"}, true, "", false, false); reflect.DeepEqual(v, map[string]interface{}{"-v": true}) != true {
+	if v, err := Parse("usage: prog [-v]", []string{"-v"}, true, "", false, false); reflect.DeepEqual(v.All, map[string]interface{}{"-v": true}) != true {
 		t.Error(err)
 	}
-	if v, err := Parse("usage: prog [-vv]", []string{}, true, "", false, false); reflect.DeepEqual(v, map[string]interface{}{"-v": 0}) != true {
+	if v, err := Parse("usage: prog [-vv]", []string{}, true, "", false, false); reflect.DeepEqual(v.All, map[string]interface{}{"-v": 0}) != true {
 		t.Error(err)
 	}
-	if v, err := Parse("usage: prog [-vv]", []string{"-v"}, true, "", false, false); reflect.DeepEqual(v, map[string]interface{}{"-v": 1}) != true {
+	if v, err := Parse("usage: prog [-vv]", []string{"-v"}, true, "", false, false); reflect.DeepEqual(v.All, map[string]interface{}{"-v": 1}) != true {
 		t.Error(err)
 	}
-	if v, err := Parse("usage: prog [-vv]", []string{"-vv"}, true, "", false, false); reflect.DeepEqual(v, map[string]interface{}{"-v": 2}) != true {
+	if v, err := Parse("usage: prog [-vv]", []string{"-vv"}, true, "", false, false); reflect.DeepEqual(v.All, map[string]interface{}{"-v": 2}) != true {
 		t.Error(err)
 	}
 	_, err := Parse("usage: prog [-vv]", []string{"-vvv"}, true, "", false, false)
 	if _, ok := err.(*UserError); !ok {
 		t.Error(err)
 	}
-	if v, err := Parse("usage: prog [-v | -vv | -vvv]", []string{"-vvv"}, true, "", false, false); reflect.DeepEqual(v, map[string]interface{}{"-v": 3}) != true {
+	if v, err := Parse("usage: prog [-v | -vv | -vvv]", []string{"-vvv"}, true, "", false, false); reflect.DeepEqual(v.All, map[string]interface{}{"-v": 3}) != true {
 		t.Error(err)
 	}
-	if v, err := Parse("usage: prog [-v...]", []string{"-vvvvvv"}, true, "", false, false); reflect.DeepEqual(v, map[string]interface{}{"-v": 6}) != true {
+	if v, err := Parse("usage: prog [-v...]", []string{"-vvvvvv"}, true, "", false, false); reflect.DeepEqual(v.All, map[string]interface{}{"-v": 6}) != true {
 		t.Error(err)
 	}
-	if v, err := Parse("usage: prog [--ver --ver]", []string{"--ver", "--ver"}, true, "", false, false); reflect.DeepEqual(v, map[string]interface{}{"--ver": 2}) != true {
+	if v, err := Parse("usage: prog [--ver --ver]", []string{"--ver", "--ver"}, true, "", false, false); reflect.DeepEqual(v.All, map[string]interface{}{"--ver": 2}) != true {
 		t.Error(err)
 	}
 }
@@ -1258,41 +1258,41 @@ func TestAnyOptionsParameter(t *testing.T) {
 
 func TestDefaultValueForPositionalArguments(t *testing.T) {
 	doc := "Usage: prog [--data=<data>...]\nOptions:\n\t-d --data=<arg>    Input data [default: x]"
-	if v, err := Parse(doc, []string{}, true, "", false, false); reflect.DeepEqual(v, map[string]interface{}{"--data": []string{"x"}}) != true {
+	if v, err := Parse(doc, []string{}, true, "", false, false); reflect.DeepEqual(v.All, map[string]interface{}{"--data": []string{"x"}}) != true {
 		t.Error(err)
 	}
 
 	doc = "Usage: prog [--data=<data>...]\nOptions:\n\t-d --data=<arg>    Input data [default: x y]"
-	if v, err := Parse(doc, []string{}, true, "", false, false); reflect.DeepEqual(v, map[string]interface{}{"--data": []string{"x", "y"}}) != true {
+	if v, err := Parse(doc, []string{}, true, "", false, false); reflect.DeepEqual(v.All, map[string]interface{}{"--data": []string{"x", "y"}}) != true {
 		t.Error(err)
 	}
 
 	doc = "Usage: prog [--data=<data>...]\nOptions:\n\t-d --data=<arg>    Input data [default: x y]"
-	if v, err := Parse(doc, []string{"--data=this"}, true, "", false, false); reflect.DeepEqual(v, map[string]interface{}{"--data": []string{"this"}}) != true {
+	if v, err := Parse(doc, []string{"--data=this"}, true, "", false, false); reflect.DeepEqual(v.All, map[string]interface{}{"--data": []string{"this"}}) != true {
 		t.Error(err)
 	}
 }
 
 func TestIssue59(t *testing.T) {
-	if v, err := Parse("usage: prog --long=<a>", []string{"--long="}, true, "", false, false); reflect.DeepEqual(v, map[string]interface{}{"--long": ""}) != true {
+	if v, err := Parse("usage: prog --long=<a>", []string{"--long="}, true, "", false, false); reflect.DeepEqual(v.All, map[string]interface{}{"--long": ""}) != true {
 		t.Error(err)
 	}
 
-	if v, err := Parse("usage: prog -l <a>\noptions: -l <a>", []string{"-l", ""}, true, "", false, false); reflect.DeepEqual(v, map[string]interface{}{"-l": ""}) != true {
+	if v, err := Parse("usage: prog -l <a>\noptions: -l <a>", []string{"-l", ""}, true, "", false, false); reflect.DeepEqual(v.All, map[string]interface{}{"-l": ""}) != true {
 		t.Error(err)
 	}
 }
 
 func TestOptionsFirst(t *testing.T) {
-	if v, err := Parse("usage: prog [--opt] [<args>...]", []string{"--opt", "this", "that"}, true, "", false, false); reflect.DeepEqual(v, map[string]interface{}{"--opt": true, "<args>": []string{"this", "that"}}) != true {
+	if v, err := Parse("usage: prog [--opt] [<args>...]", []string{"--opt", "this", "that"}, true, "", false, false); reflect.DeepEqual(v.All, map[string]interface{}{"--opt": true, "<args>": []string{"this", "that"}}) != true {
 		t.Error(err)
 	}
 
-	if v, err := Parse("usage: prog [--opt] [<args>...]", []string{"this", "that", "--opt"}, true, "", false, false); reflect.DeepEqual(v, map[string]interface{}{"--opt": true, "<args>": []string{"this", "that"}}) != true {
+	if v, err := Parse("usage: prog [--opt] [<args>...]", []string{"this", "that", "--opt"}, true, "", false, false); reflect.DeepEqual(v.All, map[string]interface{}{"--opt": true, "<args>": []string{"this", "that"}}) != true {
 		t.Error(err)
 	}
 
-	if v, err := Parse("usage: prog [--opt] [<args>...]", []string{"this", "that", "--opt"}, true, "", true, false); reflect.DeepEqual(v, map[string]interface{}{"--opt": false, "<args>": []string{"this", "that", "--opt"}}) != true {
+	if v, err := Parse("usage: prog [--opt] [<args>...]", []string{"this", "that", "--opt"}, true, "", true, false); reflect.DeepEqual(v.All, map[string]interface{}{"--opt": false, "<args>": []string{"this", "that", "--opt"}}) != true {
 		t.Error(err)
 	}
 }
@@ -1300,16 +1300,16 @@ func TestOptionsFirst(t *testing.T) {
 func TestIssue68OptionsShortcutDoesNotIncludeOptionsInUsagePattern(t *testing.T) {
 	args, err := Parse("usage: prog [-ab] [options]\noptions: -x\n -y", []string{"-ax"}, true, "", false, false)
 
-	if args["-a"] != true {
+	if args.Bool["-a"] != true {
 		t.Error(err)
 	}
-	if args["-b"] != false {
+	if args.Bool["-b"] != false {
 		t.Error(err)
 	}
-	if args["-x"] != true {
+	if args.Bool["-x"] != true {
 		t.Error(err)
 	}
-	if args["-y"] != false {
+	if args.Bool["-y"] != false {
 		t.Error(err)
 	}
 }
@@ -1317,15 +1317,15 @@ func TestIssue68OptionsShortcutDoesNotIncludeOptionsInUsagePattern(t *testing.T)
 func TestIssue65EvaluateArgvWhenCalledNotWhenImported(t *testing.T) {
 	os.Args = strings.Fields("prog -a")
 	v, err := Parse("usage: prog [-ab]", nil, true, "", false, false)
-	w := map[string]interface{}{"-a": true, "-b": false}
-	if reflect.DeepEqual(v, w) != true {
+	w := map[string]bool{"-a": true, "-b": false}
+	if reflect.DeepEqual(v.Bool, w) != true {
 		t.Error(err)
 	}
 
 	os.Args = strings.Fields("prog -b")
 	v, err = Parse("usage: prog [-ab]", nil, true, "", false, false)
-	w = map[string]interface{}{"-a": false, "-b": true}
-	if reflect.DeepEqual(v, w) != true {
+	w = map[string]bool{"-a": false, "-b": true}
+	if reflect.DeepEqual(v.Bool, w) != true {
 		t.Error(err)
 	}
 }
@@ -1425,7 +1425,7 @@ func TestFileTestcases(t *testing.T) {
 			} else if _, ok := err.(*UserError); !c.userError && ok {
 				// unexpected user-error
 				t.Error("testcase:", c.id, "error:", err, "result:", result)
-			} else if reflect.DeepEqual(c.expect, result) != true {
+			} else if err == nil && reflect.DeepEqual(c.expect, result.All) != true {
 				t.Error("testcase:", c.id, "result:", result, "expect:", c.expect)
 			}
 		}
@@ -1497,7 +1497,7 @@ func parseTest(raw []byte) ([]testcase, error) {
 
 // parseOutput wraps the Parse() function to also return stdout
 func parseOutput(doc string, argv []string, help bool, version string,
-	optionsFirst bool) (map[string]interface{}, string, error) {
+	optionsFirst bool) (*Args, string, error) {
 	stdout := os.Stdout
 	r, w, _ := os.Pipe()
 	os.Stdout = w
