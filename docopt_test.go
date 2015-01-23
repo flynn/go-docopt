@@ -1408,6 +1408,25 @@ func TestIssue126DefaultsNotParsedCorrectlyWhenTabs(t *testing.T) {
 	}
 }
 
+func TestStringOptionShortAndLong(t *testing.T) {
+	usage := `usage: prog [-d|--dir=<dir>]
+Options:
+  -d, --dir <dir>`
+	expected := map[string]string{"--dir": "foo"}
+	for _, argv := range [][]string{
+		{"--dir", "foo"},
+		{"-d", "foo"},
+	} {
+		v, err := Parse(usage, argv, false, "", false, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if reflect.DeepEqual(v.String, expected) != true {
+			t.Errorf("error parsing args %v: expected %v, got %v", argv, expected, v.String)
+		}
+	}
+}
+
 // conf file based test cases
 func TestFileTestcases(t *testing.T) {
 	filenames := []string{"testcases.docopt", "test_golang.docopt"}
