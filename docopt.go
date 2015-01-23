@@ -1233,6 +1233,10 @@ func (pl patternList) args() *Args {
 	for _, a := range pl {
 		res.All[a.name] = a.value
 		switch v := a.value.(type) {
+		case []string:
+			for _, s := range v {
+				res.String[a.name] = s
+			}
 		case string:
 			res.String[a.name] = v
 		case bool:
